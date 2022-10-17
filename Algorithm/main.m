@@ -4,17 +4,18 @@
 
 clear; close all; clc;
 addpath 'functions'
+t_change = 1e10;
 
 % Receives matrices A,B,L,Pi_estimated,K,
 % initial conditions alpha, phi e phi_dot
 % and the parameters Delta, delta, tmax, mu e tau
 
 % Uncomment the desired system 
-addpath 'Quadrotor'
+%addpath 'Quadrotor'
+addpath 'Balloon'
 %addpath 'Car'
 %addpath 'GL20_Fig3'
 %addpath 'ZH15'
-
 
 start
 save_folder = 'results\';
@@ -24,7 +25,8 @@ Kdelta = 24/100; %0.05;
 
 
 MULTIPLE_SIMULATIONS = 0;
-MAX_SIMULATIONS = 20; %if MULTIPLE_SIMULATIONS is on, set the max simulations
+%if MULTIPLE_SIMULATIONS is on, set the max simulations
+MAX_SIMULATIONS = 20;
 
 % Select the parameter you want to sweep
 %PARAMETER_SWEEP = 'horizon = simulation_counter;'; % For horizon analysis
@@ -124,7 +126,7 @@ for simulation_counter = 1:max_sim
             else
                 condition = false; %J(i-1) > 1e4; %mean(abs(J(i-100:i-1))) > 10; %J(i-1) >= -1e30
                 vf = 0;
-                K(2,:) = zeros(1,n);
+                %K(2,:) = zeros(1,n);
             end
             
             if  condition
