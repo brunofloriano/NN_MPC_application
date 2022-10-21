@@ -1,22 +1,22 @@
-% This code implements a group of balloons around a hurricane
-% by Bruno R. O. Floriano
+%% This code implements a group of balloons around a hurricane
+%% by Bruno R. O. Floriano
 
 clear; close all; clc;
 addpath 'functions'
 
-% Include the system functions and parameters
+%% Include the system functions and parameters
 addpath 'Balloon'
 start
 save_folder = 'results/';
 
-% Choose simulation parameters
+%% Choose simulation parameters
 delta_t = 0.1; % in seconds
 tmax = 1*3600; % in seconds
 tangential_velocity = 60; % in m/s
 
 SAVE_DATA = 0;
 
-% Generate initial conditions
+%% Generate initial conditions
 N = length(initial_conditions);
 
 initial_angular_position = initial_angular_positions();
@@ -30,10 +30,10 @@ for agent_counter = 1:N
     individual_coord{agent_counter}(:,1) = [x;y];
 end
 
-% Simulation
+%% Simulation
 t = 0:delta_t:tmax-delta_t;
 
-% Time loop
+%% Time loop
 for time_counter = 2:length(t)
     for agent_counter = 1:N
         individual_state{agent_counter} = dynamics(individual_state{agent_counter},0,delta_t);
@@ -55,7 +55,7 @@ end
 
 
 
-% Save data
+%% Save data
 if SAVE_DATA == 1
     comment = ['This simulation was perform with:' newline];
     comment = [comment '']; %Include here what is different for this sim

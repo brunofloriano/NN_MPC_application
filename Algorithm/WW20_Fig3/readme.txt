@@ -1,1 +1,0 @@
-Reproducao da Fig. 3 e 4 de WW20
