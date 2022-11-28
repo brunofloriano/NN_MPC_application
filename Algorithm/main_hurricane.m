@@ -11,7 +11,7 @@ save_folder = 'results/';
 
 %% Choose simulation parameters
 delta_t = 0.1; % in seconds
-tmax = 1*3600; % in seconds
+tmax = 2*3600; % in seconds
 tangential_velocity = 60; % in m/s
 
 SAVE_DATA = 0;
@@ -33,7 +33,7 @@ end
 %% Simulation
 t = 0:delta_t:tmax-delta_t;
 
-%% Time loop
+% Time loop
 for time_counter = 2:length(t)
     for agent_counter = 1:N
         individual_state{agent_counter} = dynamics(individual_state{agent_counter},0,delta_t);

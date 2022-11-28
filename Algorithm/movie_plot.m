@@ -1,6 +1,10 @@
 clear all; close all; clc;
 
-load('results/dataBalloon 2022-10-20-14-37/dataBalloon 2022-10-20-14-37.mat');
+%file_name = 'dataBalloon 2022-10-20-14-47';
+%file_name = 'dataBalloon 2022-11-1-10-15';
+file_name = 'dataBalloon 2022-11-15-16-4';
+load(['results/' file_name '/' file_name '.mat']);
+mkdir([savefolderlocal '/frames']);
 
 % for agent_counter = 1:N
 %     plot_window{agent_counter} = plot(NaN,NaN);
@@ -9,7 +13,7 @@ figure
 hold on
 grid
 axis(90e3*[-1 1 -1 1]);
-list = 'rbkgbmyr';
+list = 'rbkgbmyrb';
 
 n_steps = length(t)/200;
 counter = 0;
@@ -25,14 +29,14 @@ for time_counter = 1:n_steps:length(t)
         %set(plot_window, 'XData', x, 'YData', y, 'LineWidth',3, 'Color',list(agent_counter));
         %drawnow
     end
-    print(['frames/Frame ' num2str(counter)], '-dpng', '-r150');
+    print([savefolderlocal '/frames/Frame ' num2str(counter)], '-dpng', '-r150');
 end
 
 %% Now time to generate the animated gif
-GifName = 'HurricaneAnimation.gif';
+GifName = [savefolderlocal '/HurricaneAnimation.gif'];
 delay = 0.1;    % Delay between frames (s)
 for ii = 1:n_steps
-    [A, ~] = imread(['frames/Frame ' num2str(ii) '.png']);
+    [A, ~] = imread([savefolderlocal '/frames/Frame ' num2str(ii) '.png']);
     [X, map] = rgb2ind(A, 256);
     if ii == 1
         imwrite(X, map, GifName, 'gif', 'LoopCount', inf, 'DelayTime', delay)

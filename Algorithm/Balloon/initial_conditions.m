@@ -11,11 +11,23 @@ inner_radius = 40e3;
 outter_radius = 80e3;
 height = 0;
 
-initial_state{1} = [inner_radius,height];
+initial_state{1} = [0,height];
+
 initial_state{2} = [inner_radius,height];
 initial_state{3} = [inner_radius,height];
 initial_state{4} = [inner_radius,height];
-initial_state{5} = [outter_radius,height];
+initial_state{5} = [inner_radius,height];
+
 initial_state{6} = [outter_radius,height];
 initial_state{7} = [outter_radius,height];
 initial_state{8} = [outter_radius,height];
+initial_state{9} = [outter_radius,height];
+
+% initial_state{1} = [inner_radius,height];
+% initial_state{2} = [inner_radius,height];
+% initial_state{3} = [inner_radius,height];
+% initial_state{4} = [inner_radius,height];
+% initial_state{5} = [outter_radius,height];
+% initial_state{6} = [outter_radius,height];
+% initial_state{7} = [outter_radius,height];
+% initial_state{8} = [outter_radius,height];
