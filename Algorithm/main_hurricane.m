@@ -13,39 +13,59 @@ save_folder = 'results/';
 delta_t = 0.1; % in seconds
 tmax = 2*3600; % in seconds
 tangential_velocity = 60; % in m/s
+max_radius = 200e3;
+N = 100; % excluding the root (mothership)
+height = 0;
+comm_range = 50e3;
+max_root_connections = 5;
 
-SAVE_DATA = 0;
+SAVE_DATA = 1;
 
-%% Generate initial conditions
-N = length(initial_conditions);
+%% Generate initial conditions (inner and outer radius)
+% N = length(initial_conditions);
+% 
+% initial_angular_position = initial_angular_positions();
+% initial_condition = initial_conditions();
+% 
+% individual_angular_position = initial_angular_position;
+% individual_state = initial_condition;
+% 
+% for agent_counter = 1:N
+%     [x,y] = pol2cart(individual_angular_position{agent_counter},individual_state{agent_counter}(1));
+%     individual_coord{agent_counter}(:,1) = [x;y];
+% end
 
-initial_angular_position = initial_angular_positions();
-initial_condition = initial_conditions();
+%% Generate initial conditions (random agents)
 
-individual_angular_position = initial_angular_position;
-individual_state = initial_condition;
+agents_position = generate_agents(N,max_radius);
+position = [[0;0] agents_position];
+[agents_angular_position,agents_radius] = cart2pol(position(1,:),position(2,:));
 
-for agent_counter = 1:N
-    [x,y] = pol2cart(individual_angular_position{agent_counter},individual_state{agent_counter}(1));
-    individual_coord{agent_counter}(:,1) = [x;y];
+for agent_counter = 1:N+1
+    individual_coord{agent_counter}(:,1) = position(:,agent_counter);
+    individual_angular_position{agent_counter} = agents_angular_position(agent_counter);
+    individual_state{agent_counter} = [agents_radius(agent_counter);height];
 end
 
 %% Simulation
 t = 0:delta_t:tmax-delta_t;
 
+Ggraph{1} = routing_protocol(position,comm_range,max_root_connections);
 % Time loop
 for time_counter = 2:length(t)
-    for agent_counter = 1:N
+    for agent_counter = 1:N+1
         individual_state{agent_counter} = dynamics(individual_state{agent_counter},0,delta_t);
         theta = individual_angular_position{agent_counter};
         radius = individual_state{agent_counter}(1);
 
         [x,y] = kinematics(tangential_velocity,theta,radius,delta_t);
-        [theta,radius] = cart2pol(x,y);
+        position(:,agent_counter) = [real(x);real(y)];
+        [theta,radius] = cart2pol(real(x),real(y));
 
-        individual_coord{agent_counter}(:,time_counter) = [x;y];
+        individual_coord{agent_counter}(:,time_counter) = [real(x);real(y)];
         individual_angular_position{agent_counter} = theta;
     end
+    Ggraph{time_counter} = routing_protocol(position,comm_range,max_root_connections);
 end
 
 for agent_counter = 1:N
