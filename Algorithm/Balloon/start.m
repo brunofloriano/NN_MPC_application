@@ -1,42 +1,50 @@
+%% Balloons parameters
+
+% Choose simulation parameters
+tmax = 24*3600; % in seconds
+t_change = tmax/2;
+delta_t = tmax/1000; %1; % in seconds
+tangential_velocity = 60; % in m/s
+max_radius = 200e3;
+Nr = 8; % excluding the root (mothership)
+N = Nr+1; % including mothership
+height = 0;
+level_height = 558.3;
+
+%% Communication parameters
+comm_range = 10e3;
+max_root_connections = 5;
+
+%% Map parameters
+map_steps = 500;
+encompassed_area = zeros(map_steps);
+encompassed_area_time{1} = encompassed_area;
+area_radius = 10e3;
+total_area = pi*max_radius^2;
+total_circle_area = def_circle_area(map_steps);
+
+%% Cost function parameters
+alpha_t = 1;
+beta_t = 0;
+
+beta_ac = 1;
+
+gamma_cc = 1    ;
+beta_cc = 1/(Nr + gamma_cc*Nr^2); %1;
+%% NN MPC Paraemeters
 h = 0.8394; %LMI minimization
 
-desired_individual_state{1} = [0 0]';
-desired_individual_state{2} = [0 0]';
-desired_individual_state{3} = [0 0]';
-desired_individual_state{4} = [0 0]';
-
-desired_individual_state{5} = [0 0]'; % agent to be added later
-
-% WW20 = 1 => WW20
-% WW20 = 0 => SS16
-ww20 = 0;
-
-nNeurons = 4;
-delta_t = 0.1;
-
-% INDIVIDUAL SYSTEM DYNAMICS
-a = 0.3;
-d = 0.8;
-c = d;
-alpha = [1 2 3]; 
-
-if ww20 == 1
-    phi = [1 3 6]; %WW20
-    phi_dot = [4 3 -2]; %WW20
-    A = [0 1;-d -a]; %WW20
-    tmax = 30;
-    delta = 0.3;
-else
-    phi = [0 4 7]; %SS16
-    phi_dot = [3 2 -1]; %SS16
-    A = [0 1;0 -1]; %SS16
-    tmax = 50; %18;
-    delta = 0.2;
-    K = [1 0;0 0];
+for agent_counter = 1:N
+    desired_individual_state{agent_counter} = [0 0]';
 end
 
-B = [1];
-t_change = 10;
+nNeurons = 6;
+
+% INDIVIDUAL SYSTEM DYNAMICS
+A = zeros(2);
+B = ones(1,N);
+
+
 % COMMUNICATION GRAPH
 % L{1} = [1 0 -1;0 0 0;0 0 0];
 % L{2} = [0 0 0;0 1 -1;0 -1 1];
@@ -49,10 +57,14 @@ t_change = 10;
 % Pi_estimated =[0.05 0.95;0.98 0.02];
 
 % ADD AND REMOVE AGENTS
-L{1} = [1 0 -1 0;0 0 0 0;0 0 0 0;0 0 0 0];
-L{2} = [0 0 0 0;0 1 -1 0;0 -1 1 0;0 0 0 0];
+L{1} = zeros(N);
+L{2} = L{1};
+L{3} = L{2};
+L_cumulative = L{1};
+%L{1} = [1 0 -1 0;0 0 0 0;0 0 0 0;0 0 0 0];
+%L{2} = [0 0 0 0;0 1 -1 0;0 -1 1 0;0 0 0 0];
+%L{3} = [1 0 0 -1;0 1 -1 0;0 -1 2 -1;-1 0 -1 2];
 
-L{3} = [1 0 0 -1;0 1 -1 0;0 -1 2 -1;-1 0 -1 2];
 Delta = 0.01;
 
 %Pi_estimated =[-1 1;1 -1]; %[0.9905    0.0095;    0.0097    0.9903];

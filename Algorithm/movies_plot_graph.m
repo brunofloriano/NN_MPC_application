@@ -4,7 +4,10 @@ clear all; close all; clc;
 %file_name = 'dataBalloon 2022-11-1-10-15';
 %file_name = 'dataBalloon 2022-11-15-16-4';
 %file_name = 'dataBalloon 2022-11-28-14-51';
-file_name = 'dataBalloon 2022-11-28-15-37';
+%file_name = 'dataBalloon 2022-11-28-15-37';
+%file_name = 'dataBalloon 2022-12-13-11-50';
+%file_name = 'dataBalloon 2023-1-12-10-36';
+file_name = 'dataBalloon 2023-1-23-14-25';
 load(['results/' file_name '/' file_name '.mat']);
 mkdir([savefolderlocal '/frames_graph']);
 
@@ -15,8 +18,10 @@ figure
 %hold on
 grid
 axis(200e3*[-1 1 -1 1]);
+% xlim(200e3*[-1 1]);
+% ylim(200e3*[-1 1]);
 %list = 'rbkgbmyrb';
-
+N = length(individual_coord)-1;
 n_steps = length(t)/200;
 counter = 0;
 for time_counter = 1:n_steps:length(t)
@@ -32,6 +37,7 @@ for time_counter = 1:n_steps:length(t)
         %drawnow
     end
     plot(Ggraph{time_counter},XData=graph_position(1,:),YData=real(graph_position(2,:)))
+    axis(200e3*[-1 1 -1 1]);
     title([ 't = ' num2str( t(time_counter) ) ' seconds'])
     print([savefolderlocal '/frames_graph/Frame ' num2str(counter)], '-dpng', '-r150');
 

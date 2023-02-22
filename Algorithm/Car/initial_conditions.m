@@ -1,4 +1,4 @@
-function initial_state = initial_conditions()
+%function initial_state = initial_conditions()
 
    initial_state{1} = [-3;3;pi/2;0]; % Virtual agent
    initial_state{2} = [-3;3;pi/2;0];

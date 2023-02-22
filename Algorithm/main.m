@@ -18,15 +18,16 @@ addpath 'Balloon'
 %addpath 'ZH15'
 
 start
-save_folder = 'results\';
-%%%%%%%%%%%%%%%%%%% CHOOSE SIMULATION PARAMETERS %%%%%%%%%%%%%%%%%%%%%%%%%%
+save_folder = 'results';
+
+%% CHOOSE SIMULATION PARAMETERS
 horizon = 100;
-Kdelta = 24/100; %0.05;
+Kdelta = level_height; %24/100; %0.05;
 
 
 MULTIPLE_SIMULATIONS = 0;
 %if MULTIPLE_SIMULATIONS is on, set the max simulations
-MAX_SIMULATIONS = 20;
+MAX_SIMULATIONS = 20; sim_step = 2;
 
 % Select the parameter you want to sweep
 %PARAMETER_SWEEP = 'horizon = simulation_counter;'; % For horizon analysis
@@ -34,20 +35,27 @@ PARAMETER_SWEEP = 'nNuerons = simulation_counter;'; % For cross-validation
 %PARAMETER_SWEEP = 'Kdelta = simulation_counter/100;'; % For Kdata analysis
 
 SAVE_DATA = 0;
+GRAPH_MOVIE = 1;    % Generates a video and/or GIF of the simulation
+    GIF = 0;            % Generates a GIF
+    MP4 = 1;            % Generates a MP4 video
+    GRAPH_AREA = 1;     % Generates the encompassed area video/GIF (if zero, just regular graph)
 ONLINE = 1;
 MPC = 1;
 
 
-%%%%%%%%%%%%%%%%%%% INDIVIDUAL SYSTEM DYNAMICS %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+rng('default')
+random_control = rng(1);
+%random_control = rng;
+%% INDIVIDUAL SYSTEM DYNAMICS
 
-initial_state = initial_conditions();
+initial_conditions;
 n = size(initial_state{1},1);
 m = size(B,2);
 
 
-%%%%%%%%%%%%%%%%%%%%% COMMUNICATION GRAPH %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% COMMUNICATION GRAPH 
 
-N = size(initial_state,2)-1;
+%N = size(initial_state,2)-1;
 S = length(Pi_estimated);
 
 Psi = transition_matrix(Pi_estimated,delta,Delta);
@@ -59,20 +67,25 @@ Psi2 = transition_matrix(Pi_estimated2,delta,Delta);
 mc2 = dtmc(Psi);
 mode2 = simulate(mc,(tmax)/Delta);
 
-%%%%%%%%%%%%%%%%%%%% CONTROL SYSTEM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% CONTROL SYSTEM
 
 K = zeros(m,n);
 
-%%%%%%%%%%%%%%%%%%%% AUGMENTED SYSTEM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% AUGMENTED SYSTEM
+nr = n;
+balloon_adaptation
+
 initial_state_augmented = [];
 for agent_counter = 1+1:N+1
-initial_state_augmented = [initial_state_augmented;initial_state{agent_counter}];
+    initial_state_augmented = [initial_state_augmented;initial_state{agent_counter}];
 end
 Aaug = kron(eye(N),A);
 Baug = kron(eye(N),B);
+
+
 desired_state = stack_states(desired_individual_state);
 
-%%%%%%%%%%%%%%%%%%%%% SIMULATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% SIMULATION 
 
 if delta_t < Delta
     fprintf('Sampling time has to be greater than Delta \n','s');
@@ -90,12 +103,12 @@ else
 end
 
 % ONLINE TRAINING LOOP
-for simulation_counter = 1:max_sim
+for simulation_counter = 1:sim_step:max_sim
     eval(PARAMETER_SWEEP);
     
     text = [t tmax:delta_t:(tmax+horizon*delta_t)];
     clear Jdata net
-    Kdata = zeros(1,m*n);
+    Kdata = zeros(1,m*nr);
     
     % DATA INITIALIZATION
     state(:,1) = initial_state_augmented;
@@ -121,11 +134,12 @@ for simulation_counter = 1:max_sim
         
         % ONLINE LEARNING
         if ONLINE == 1
-            if time_counter <= 100
+            if time_counter <= 25
                 condition = true;
             else
-                condition = false; %J(i-1) > 1e4; %mean(abs(J(i-100:i-1))) > 10; %J(i-1) >= -1e30
+                condition = true;% false; %J(i-1) > 1e4; %mean(abs(J(i-100:i-1))) > 10; %J(i-1) >= -1e30
                 vf = 0;
+                %K = K*0;
                 %K(2,:) = zeros(1,n);
             end
             
@@ -133,21 +147,22 @@ for simulation_counter = 1:max_sim
                 net = feedforwardnet(nNeurons);
                 net.trainParam.showWindow = 0;
                 net = train(net,Kdata',Jdata);
-                for k = 1:m*n
-                    Kvector2(k,:) = (Kline(k)-Kdelta):Kdelta/2:(Kdelta+Kline(k));
+                for k = 1:m*nr
+                    %Kvector2(k,:) = (Kline(k)-Kdelta):Kdelta/2:(Kdelta+Kline(k));
+                    Kvector2(k,:) = (Kline(k)-Kdelta):Kdelta:(Kdelta+Kline(k));
                 end
                 Ktest = Kvector2(1,:);
-                for k = 2:m*n
+                for k = 2:m*nr
                     Ktest = combvec(Ktest,Kvector2(k,:));
                 end
                 y = net(Ktest);
                 [value,index] = min(abs(y));
                 Kline = Ktest(:,index)';
-                K = vector2matrix(Kline,m,n);
+                K = vector2matrix(Kline,m,nr);
                 Kdata(counter,:) = Kline;
                 Jdata(counter) = J(time_counter-1);
 
-                Khold = vector2matrix(Kdata(counter-1,:),m,n);
+                Khold = vector2matrix(Kdata(counter-1,:),m,nr);
                 Jmin = J(time_counter-1);
                 counter = counter + 1;
             else
@@ -164,7 +179,16 @@ for simulation_counter = 1:max_sim
             individual_state(N+1) = initial_state(N+1);
         end
         
-        Laplacian = L{theta};
+       
+        if strcmp(save_mainname,'dataBalloon ')
+            Laplacian = laplacian(Ggraph{time_counter-1});
+            L_cumulative = accumulate_laplacian(Laplacian,L_cumulative);
+            K(1) = 0;
+            %K = K*0;
+        else
+            Laplacian = L{theta};
+        end
+        
         Adjacency = Laplacian2adj(Laplacian);
         
         if ONLINE == 0
@@ -172,8 +196,9 @@ for simulation_counter = 1:max_sim
         end
         
         individual_state = group_dynamics(individual_state,K,Adjacency,delta_t);
-        
-        
+        %balloon_kinematics
+        [individual_coord, individual_angular_position, individual_state, Ggraph] = group_kinematics(individual_angular_position, individual_state, individual_coord, time_counter, delta_t, comm_range, max_root_connections,Ggraph);
+
         state(:,time_counter) = stack_states(individual_state);
         state_error(:,time_counter) = state(:,time_counter) - (kron(ones(N,1),individual_state{1}) + desired_state);
         state_error_norm(:,time_counter) = norm(state_error(:,time_counter));
@@ -184,6 +209,20 @@ for simulation_counter = 1:max_sim
             virtual_state(:,1) = state(:,time_counter);
             virtual_state0(:,1) = state(1:n,time_counter);
             vmode = simulate(mc,horizon,'X0',eye_matrix(theta,:));
+            if strcmp(save_mainname,'dataBalloon ')
+                if t(time_counter) > t_change
+                    L_cumulative = zeros(N);
+                    encompassed_area = zeros(map_steps);
+                    t_change = 1e10;
+                end
+                [area_covered, encompassed_area] = area_coverage(individual_coord,max_radius,map_steps, encompassed_area, area_radius,time_counter,total_circle_area);
+                encompassed_area_time{time_counter} = encompassed_area;
+                virtual_area_covered = area_covered;
+                virtual_encompassed_area = encompassed_area;
+                virtual_individual_coord = individual_coord;
+                virtual_individual_angular_position = individual_angular_position;
+                virtual_Ggraph = Ggraph;
+            end
             %vmode(1) = theta;
             for virtual_time_counter = 1:horizon
                 for s = 1:S
@@ -191,6 +230,10 @@ for simulation_counter = 1:max_sim
                         virtual_Adjacency = Laplacian2adj(L{s});
                         
                         virtual_individual_state = group_dynamics(virtual_individual_state,K,virtual_Adjacency,delta_t);
+                        %virtual_ballon_kinematics;
+                        [virtual_individual_coord, virtual_individual_angular_position, virtual_individual_state, virtual_Ggraph] = group_kinematics(virtual_individual_angular_position, virtual_individual_state, virtual_individual_coord, virtual_time_counter, delta_t, comm_range, max_root_connections,virtual_Ggraph);
+                        [virtual_area_covered, virtual_encompassed_area] = area_coverage(virtual_individual_coord,max_radius,map_steps, virtual_encompassed_area, area_radius,virtual_time_counter,total_circle_area);
+
                         virtual_state(:,virtual_time_counter) = stack_states(virtual_individual_state);
                         virtual_state0(:,virtual_time_counter) = virtual_individual_state{1};
                         
@@ -198,6 +241,7 @@ for simulation_counter = 1:max_sim
                     
                     virtual_state_error = virtual_state(:,virtual_time_counter) - (kron(ones(N,1),virtual_state0(:,virtual_time_counter)) + desired_state);
                     Jinst(virtual_time_counter,s) = cost_function(virtual_state_error,kron((L{s}+L{s}'),eye(n)));
+                    cost_function_balloon;
                 end
                 
                 if virtual_time_counter == 1
@@ -243,7 +287,7 @@ for simulation_counter = 1:max_sim
 
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% PLOT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% PLOT
 figure
 subplot(2,1,1)
 title('Without offset added')
@@ -287,7 +331,8 @@ semilogy(J)
 
 if MULTIPLE_SIMULATIONS == 1
     figure
-    semilogy([1:max_sim],MSE)
+    vector = 1:sim_step:max_sim;
+    semilogy(vector,MSE(vector))
     xlabel('M')
     ylabel('MSE')
 end
@@ -306,17 +351,22 @@ end
 %sim('WW20sim_aug');
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%% SAVE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if SAVE_DATA == 1
+%% SAVE
+if SAVE_DATA == 1 || GRAPH_MOVIE == 1
     comment = ['This simulation was perform with:' newline];
     comment = [comment '']; %Include here what is different for this sim
     clocktime = clock;
     time_now = [num2str(clocktime(1)) '-' num2str(clocktime(2)) '-' num2str(clocktime(3)) '-' num2str(clocktime(4)) '-' num2str(clocktime(5))];
-    savefolderlocal = [save_folder '\' save_mainname time_now];
-    save_file = [savefolderlocal '\' save_mainname  time_now '.mat'];
+    savefolderlocal = [save_folder '/' save_mainname time_now];
+    save_file = [savefolderlocal '/' save_mainname  time_now '.mat'];
 
     mkdir(savefolderlocal);
     save(save_file);
-    saveas(gcf,[savefolderlocal '\' save_mainname  time_now '.eps']);
-    saveas(gcf,[savefolderlocal '\' save_mainname  time_now '.fig']);
+    saveas(gcf,[savefolderlocal '/' save_mainname  time_now '.eps']);
+    saveas(gcf,[savefolderlocal '/' save_mainname  time_now '.fig']);
+end
+
+%% Generate movie plot
+if GRAPH_MOVIE == 1
+    plot_movie(savefolderlocal,MP4,GIF,t,individual_coord,Ggraph,GRAPH_AREA,Nr,encompassed_area_time)
 end
