@@ -21,7 +21,7 @@ start
 save_folder = 'results';
 
 %% CHOOSE SIMULATION PARAMETERS
-horizon = 100;
+horizon = 20;
 Kdelta = level_height; %24/100; %0.05;
 
 
@@ -37,7 +37,7 @@ PARAMETER_SWEEP = 'nNuerons = simulation_counter;'; % For cross-validation
 SAVE_DATA = 0;
 GRAPH_MOVIE = 1;    % Generates a video and/or GIF of the simulation
     GIF = 0;            % Generates a GIF
-    MP4 = 1;            % Generates a MP4 video
+    VIDEO = 1;            % Generates a MP4 video
     GRAPH_AREA = 1;     % Generates the encompassed area video/GIF (if zero, just regular graph)
 ONLINE = 1;
 MPC = 1;
@@ -134,10 +134,10 @@ for simulation_counter = 1:sim_step:max_sim
         
         % ONLINE LEARNING
         if ONLINE == 1
-            if time_counter <= 25
+            if time_counter <= 100
                 condition = true;
             else
-                condition = true;% false; %J(i-1) > 1e4; %mean(abs(J(i-100:i-1))) > 10; %J(i-1) >= -1e30
+                condition = J(time_counter-1) > 10; %true;% false; %J(i-1) > 1e4; %mean(abs(J(i-100:i-1))) > 10; %J(i-1) >= -1e30
                 vf = 0;
                 %K = K*0;
                 %K(2,:) = zeros(1,n);
@@ -185,6 +185,11 @@ for simulation_counter = 1:sim_step:max_sim
             L_cumulative = accumulate_laplacian(Laplacian,L_cumulative);
             K(1) = 0;
             %K = K*0;
+            if t(time_counter) > t_change
+                L_cumulative = zeros(N);
+                encompassed_area = zeros(map_steps);
+                t_change = 1e10;
+            end
         else
             Laplacian = L{theta};
         end
@@ -202,6 +207,13 @@ for simulation_counter = 1:sim_step:max_sim
         state(:,time_counter) = stack_states(individual_state);
         state_error(:,time_counter) = state(:,time_counter) - (kron(ones(N,1),individual_state{1}) + desired_state);
         state_error_norm(:,time_counter) = norm(state_error(:,time_counter));
+
+        if strcmp(save_mainname,'dataBalloon ')
+            %energy_time = time_energy(alpha_time_constant, t(time_counter), time_horizon);
+            [area_covered, encompassed_area] = area_coverage(individual_coord,max_radius,map_steps, encompassed_area, area_radius,time_counter,total_circle_area, alpha_time_constant, t(time_counter), time_horizon,delta_t,area_covariance_matrix,max_area_pdf);
+            %encompassed_area = encompassed_area*energy_time;
+            encompassed_area_time{time_counter} = encompassed_area;
+        end
         %%%%%%%%%%%%%%%%%%%%%% MPC %%%%%%%%%%%%%%%%%%%%%
         if MPC == 1
             eye_matrix = eye(S);
@@ -210,13 +222,6 @@ for simulation_counter = 1:sim_step:max_sim
             virtual_state0(:,1) = state(1:n,time_counter);
             vmode = simulate(mc,horizon,'X0',eye_matrix(theta,:));
             if strcmp(save_mainname,'dataBalloon ')
-                if t(time_counter) > t_change
-                    L_cumulative = zeros(N);
-                    encompassed_area = zeros(map_steps);
-                    t_change = 1e10;
-                end
-                [area_covered, encompassed_area] = area_coverage(individual_coord,max_radius,map_steps, encompassed_area, area_radius,time_counter,total_circle_area);
-                encompassed_area_time{time_counter} = encompassed_area;
                 virtual_area_covered = area_covered;
                 virtual_encompassed_area = encompassed_area;
                 virtual_individual_coord = individual_coord;
@@ -225,15 +230,18 @@ for simulation_counter = 1:sim_step:max_sim
             end
             %vmode(1) = theta;
             for virtual_time_counter = 1:horizon
+                virtual_time = t(time_counter) + (virtual_time_counter - 1)*delta_t;
                 for s = 1:S
                     if virtual_time_counter > 1
                         virtual_Adjacency = Laplacian2adj(L{s});
                         
                         virtual_individual_state = group_dynamics(virtual_individual_state,K,virtual_Adjacency,delta_t);
-                        %virtual_ballon_kinematics;
-                        [virtual_individual_coord, virtual_individual_angular_position, virtual_individual_state, virtual_Ggraph] = group_kinematics(virtual_individual_angular_position, virtual_individual_state, virtual_individual_coord, virtual_time_counter, delta_t, comm_range, max_root_connections,virtual_Ggraph);
-                        [virtual_area_covered, virtual_encompassed_area] = area_coverage(virtual_individual_coord,max_radius,map_steps, virtual_encompassed_area, area_radius,virtual_time_counter,total_circle_area);
-
+                        if strcmp(save_mainname,'dataBalloon ')
+                            %virtual_ballon_kinematics;
+                            [virtual_individual_coord, virtual_individual_angular_position, virtual_individual_state, virtual_Ggraph] = group_kinematics(virtual_individual_angular_position, virtual_individual_state, virtual_individual_coord, virtual_time_counter, delta_t, comm_range, max_root_connections,virtual_Ggraph);
+                            [virtual_area_covered, virtual_encompassed_area] = area_coverage(virtual_individual_coord,max_radius,map_steps, virtual_encompassed_area, area_radius,virtual_time_counter,total_circle_area, alpha_time_constant, virtual_time, time_horizon,delta_t,area_covariance_matrix,max_area_pdf);
+                            %virtual_encompassed_area = virtual_encompassed_area*energy_time;
+                        end
                         virtual_state(:,virtual_time_counter) = stack_states(virtual_individual_state);
                         virtual_state0(:,virtual_time_counter) = virtual_individual_state{1};
                         
@@ -368,5 +376,5 @@ end
 
 %% Generate movie plot
 if GRAPH_MOVIE == 1
-    plot_movie(savefolderlocal,MP4,GIF,t,individual_coord,Ggraph,GRAPH_AREA,Nr,encompassed_area_time)
+    plot_movie(savefolderlocal,VIDEO,GIF,t,individual_coord,Ggraph,GRAPH_AREA,Nr,encompassed_area_time)
 end

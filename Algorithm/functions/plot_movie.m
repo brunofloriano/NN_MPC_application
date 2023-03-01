@@ -1,15 +1,17 @@
-function VideoName = plot_movie(savefolderlocal,MP4,GIF,t,individual_coord,Ggraph,GRAPH_AREA,Nr,encompassed_area_time)
+function VideoName = plot_movie(savefolderlocal,VIDEO,GIF,t,individual_coord,Ggraph,GRAPH_AREA,Nr,encompassed_area_time)
 
 if GRAPH_AREA == 1
-    video_file_name = '/HurricaneVideoArea2.mp4';
+    %video_file_name = '/HurricaneVideoArea2.avi';
+    video_file_name = '/HurricaneVideoArea.mp4';
 else
-    video_file_name = '/HurricaneVideoGraph.mp4';
+    video_file_name = '/HurricaneVideoGraph.avi';
 end
 
 %file_name = [save_mainname time_now]; %'dataBalloon 2022-12-13-11-50';
 %load(['results/' file_name '/' file_name '.mat']);
 mkdir([savefolderlocal '/frames_graph']);
-if MP4 == 1
+if VIDEO == 1
+    %VideoName = VideoWriter([savefolderlocal video_file_name],'Motion JPEG AVI');
     VideoName = VideoWriter([savefolderlocal video_file_name],'MPEG-4');
     open(VideoName);
 end
@@ -29,8 +31,29 @@ for time_counter = 1:n_steps:length(t)
     counter = counter + 1;
 
     if GRAPH_AREA == 1
-        mesh(encompassed_area_time{time_counter});
+
+        %mesh(encompassed_area_time{time_counter});
         %contour(encompassed_area_time{time_counter},Nr+1)
+        %contourf(encompassed_area_time{time_counter})
+        imagesc([-200e3 200e3], [-200e3 200e3], encompassed_area_time{time_counter})
+        %heatmap(encompassed_area_time{time_counter}); grid off;
+
+        hold on
+
+        for agent_counter = 1:Nr+1
+            x = individual_coord{agent_counter}(1,time_counter);
+            y = individual_coord{agent_counter}(2,time_counter);
+            graph_position(:,agent_counter) = [x;y];
+            %plot(x,y, 'LineWidth',3)
+
+            %set(plot_window, 'XData', x, 'YData', y, 'LineWidth',3, 'Color',list(agent_counter));
+            %drawnow
+        end
+
+        plot(Ggraph{time_counter},XData=graph_position(1,:),YData=real(graph_position(2,:)))
+        axis(200e3*[-1 1 -1 1]);
+        hold off
+
     else
         %pause(0.01)
         for agent_counter = 1:Nr+1
@@ -49,7 +72,7 @@ for time_counter = 1:n_steps:length(t)
     title([ 't = ' num2str( t(time_counter) ) ' seconds'])
     print([savefolderlocal '/frames_graph/Frame ' num2str(counter)], '-dpng', '-r150');
 
-    if MP4 == 1
+    if VIDEO == 1
         VideoFrame = getframe(gcf);
         writeVideo(VideoName,VideoFrame);
     end
@@ -72,6 +95,6 @@ if GIF == 1
         end
     end
 end
-if MP4 == 1
+if VIDEO == 1
     close(VideoName);
 end

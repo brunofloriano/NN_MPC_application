@@ -1,7 +1,7 @@
 %% Define circle area
-% This function creates the matrix 'total_circle_area' with the number of
-% steps 'map_steps'. It represents a map with '1' where it is inside a circle 
-% and '0' otherwise.
+% This function creates the matrix 'total_circle_area' with size
+% 'map_steps'. It represents a map with '1' where it is inside a circle of 
+% diameter 'map_steps' and '0' otherwise.
 
 function total_circle_area = def_circle_area(map_steps)
 

@@ -2,8 +2,12 @@
 
 % Choose simulation parameters
 tmax = 24*3600; % in seconds
-t_change = tmax/2;
+%t_change = tmax/2;
 delta_t = tmax/1000; %1; % in seconds
+t73 = tmax; % time to have a 73% decrease on certainty
+alpha_time_constant = 1/t73;
+time_horizon = tmax/2;
+
 tangential_velocity = 60; % in m/s
 max_radius = 200e3;
 Nr = 8; % excluding the root (mothership)
@@ -16,12 +20,20 @@ comm_range = 10e3;
 max_root_connections = 5;
 
 %% Map parameters
-map_steps = 500;
+map_steps = 200;
 encompassed_area = zeros(map_steps);
 encompassed_area_time{1} = encompassed_area;
 area_radius = 10e3;
 total_area = pi*max_radius^2;
 total_circle_area = def_circle_area(map_steps);
+area_normal_variance = area_radius^2;
+area_normal_covariance = 0; %area_normal_variance/2;
+area_covariance_matrix = area_normal_variance*eye(2) + area_normal_covariance*[0 1;1 0];
+%plane_size = max_radius;
+%plane_step = 2*plane_size/map_steps;
+%covariance = round(area_covariance_matrix/plane_step^2);
+%normal_area = def_normal_area(map_steps,[round(map_steps/2);round(map_steps/2)],covariance);
+max_area_pdf = (2*pi)^(-1)*(det(area_covariance_matrix))^(-1/2);
 
 %% Cost function parameters
 alpha_t = 1;

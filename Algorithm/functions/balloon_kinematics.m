@@ -29,7 +29,6 @@ if strcmp(save_mainname,'dataBalloon ')
             %theta_position = - theta_position;
             radius = - radius;
             individual_state{agent_counter+1}(1) = - individual_state{agent_counter+1}(1);
-            disp('Negative radius warning!')
         end
         radius_vector{agent_counter}(time_counter) = radius;
 
