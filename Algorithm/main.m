@@ -3,7 +3,8 @@
 % by Bruno R. O. Floriano
 
 clear; close all; clc;
-addpath 'functions'
+addpath functions
+addpath functions/Bens_functions/
 t_change = 1e10;
 
 % Receives matrices A,B,L,Pi_estimated,K,
@@ -21,7 +22,7 @@ start
 save_folder = 'results';
 
 %% CHOOSE SIMULATION PARAMETERS
-horizon = 20;
+horizon = 10;
 Kdelta = level_height; %24/100; %0.05;
 
 
@@ -92,7 +93,8 @@ if delta_t < Delta
     fprintf('Making tdelta = Delta \n','s');
     delta_t = Delta;
 end
-t = 0:delta_t:tmax-delta_t;
+t = 0:delta_t:tmax;%-delta_t;
+Time.t = t;
 state(:,1) = initial_state_augmented;
 
 
@@ -131,7 +133,7 @@ for simulation_counter = 1:sim_step:max_sim
  
     % TIME LOOP
     for time_counter = 2:length(t)
-        
+        Time.time_counter = time_counter;
         % ONLINE LEARNING
         if ONLINE == 1
             if time_counter <= 100
@@ -173,9 +175,9 @@ for simulation_counter = 1:sim_step:max_sim
         %K=ones(m,n);
         %%%%%%%%%%%%%%%%% DYNAMIC SYSTEM %%%%%%%%%%%%%%%%%%%%%
         if t(time_counter) >= t_change
-            theta = mode2(round(time_counter*delta_t/Delta));
+            theta = mode2(round((time_counter-1)*delta_t/Delta));
         else
-            theta = mode(round(time_counter*delta_t/Delta));
+            theta = mode(round((time_counter-1)*delta_t/Delta));
             individual_state(N+1) = initial_state(N+1);
         end
         
@@ -210,9 +212,10 @@ for simulation_counter = 1:sim_step:max_sim
 
         if strcmp(save_mainname,'dataBalloon ')
             %energy_time = time_energy(alpha_time_constant, t(time_counter), time_horizon);
-            [area_covered, encompassed_area] = area_coverage(individual_coord,max_radius,map_steps, encompassed_area, area_radius,time_counter,total_circle_area, alpha_time_constant, t(time_counter), time_horizon,delta_t,area_covariance_matrix,max_area_pdf);
+            Area = area_coverage(G,individual_coord, Area, Time, Agents);
             %encompassed_area = encompassed_area*energy_time;
-            encompassed_area_time{time_counter} = encompassed_area;
+            encompassed_area_time{time_counter} = Area.encompassed_area;
+            encompassed_area = Area.encompassed_area;
         end
         %%%%%%%%%%%%%%%%%%%%%% MPC %%%%%%%%%%%%%%%%%%%%%
         if MPC == 1
@@ -222,15 +225,18 @@ for simulation_counter = 1:sim_step:max_sim
             virtual_state0(:,1) = state(1:n,time_counter);
             vmode = simulate(mc,horizon,'X0',eye_matrix(theta,:));
             if strcmp(save_mainname,'dataBalloon ')
-                virtual_area_covered = area_covered;
+                virtual_area_covered = Area.area_covered;
                 virtual_encompassed_area = encompassed_area;
                 virtual_individual_coord = individual_coord;
                 virtual_individual_angular_position = individual_angular_position;
+                Virtual_Area = Area;
+                Virtual_Time = Time;
                 virtual_Ggraph = Ggraph;
             end
             %vmode(1) = theta;
             for virtual_time_counter = 1:horizon
                 virtual_time = t(time_counter) + (virtual_time_counter - 1)*delta_t;
+                Virtual_Time.time_counter = virtual_time_counter;
                 for s = 1:S
                     if virtual_time_counter > 1
                         virtual_Adjacency = Laplacian2adj(L{s});
@@ -239,7 +245,10 @@ for simulation_counter = 1:sim_step:max_sim
                         if strcmp(save_mainname,'dataBalloon ')
                             %virtual_ballon_kinematics;
                             [virtual_individual_coord, virtual_individual_angular_position, virtual_individual_state, virtual_Ggraph] = group_kinematics(virtual_individual_angular_position, virtual_individual_state, virtual_individual_coord, virtual_time_counter, delta_t, comm_range, max_root_connections,virtual_Ggraph);
-                            [virtual_area_covered, virtual_encompassed_area] = area_coverage(virtual_individual_coord,max_radius,map_steps, virtual_encompassed_area, area_radius,virtual_time_counter,total_circle_area, alpha_time_constant, virtual_time, time_horizon,delta_t,area_covariance_matrix,max_area_pdf);
+                            %[virtual_area_covered, virtual_encompassed_area] = area_coverage(G,virtual_individual_coord,max_radius,map_steps, virtual_encompassed_area, area_radius,virtual_time_counter,total_circle_area, alpha_time_constant, virtual_time, time_horizon,delta_t,area_covariance_matrix,max_area_pdf,std_area);
+                            Virtual_Area = area_coverage(G,virtual_individual_coord, Virtual_Area, Virtual_Time, Agents);
+                            virtual_encompassed_area = Virtual_Area.encompassed_area;
+                            virtual_area_covered = Virtual_Area.area_covered;
                             %virtual_encompassed_area = virtual_encompassed_area*energy_time;
                         end
                         virtual_state(:,virtual_time_counter) = stack_states(virtual_individual_state);
@@ -270,7 +279,7 @@ for simulation_counter = 1:sim_step:max_sim
         
         % Simulation situation display
         current_sim = time_counter/length(t)*100;
-        if rem(time_counter,100) == 0 && MULTIPLE_SIMULATIONS == 0
+        if rem(time_counter,1) == 0 && MULTIPLE_SIMULATIONS == 0
             fprintf('Sim is at %d %% \n',round(current_sim));
         end
 

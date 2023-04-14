@@ -1,0 +1,16 @@
+clear; close all; clc;
+addpath functions
+addpath functions/Bens_functions/
+
+addpath 'Balloon'
+
+start
+save_folder = 'results';
+plane_size = max_radius;
+plane_step = 2*plane_size/map_steps;
+covariance = round(area_covariance_matrix/plane_step^2);
+
+normal_area = def_normal_area(map_steps,[30;30],covariance);
+
+%mesh(x,y,normal_area)
+images

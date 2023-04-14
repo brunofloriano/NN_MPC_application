@@ -1,0 +1,1 @@
+function [phi]=VL(th), phi=min((th+abs(th))/(1+abs(th)),0); end

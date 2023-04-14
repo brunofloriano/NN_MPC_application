@@ -1,58 +1,109 @@
-function [area_covered, encompassed_area] = area_coverage(individual_coord,max_radius,map_steps, encompassed_area, area_radius,time_counter,total_circle_area, alpha_time_constant, t, time_horizon,delta_t,area_covariance_matrix,max_area_pdf)
-N = length(individual_coord);
-%radial_step = 1e3;
-%angular_step = 2*pi/100;
+function Area = area_coverage(G,individual_coord, Area, Time, Agents)
 
-plane_size = max_radius;
-plane_step = 2*plane_size/map_steps;
-covariance = round(area_covariance_matrix/plane_step^2);
-%encompassed_area = zeros(map_steps, map_steps);
 
-% Compute time energy increment
-%energy_increment = time_energy_increment(0, alpha_time_constant, t, time_horizon,delta_t);
-energy_increment = -alpha_time_constant*delta_t;
-% Include time decrease (damping)
-encompassed_area = encompassed_area + energy_increment;
-encompassed_area(encompassed_area<0) = 0;
+Area.encompassed_area(Area.encompassed_area>1) = 1;
+Area.encompassed_area(Area.encompassed_area<0) = 0;
 
-for agent_counter = 1:N
-    x = individual_coord{agent_counter}(1,time_counter);
-    y = individual_coord{agent_counter}(2,time_counter);
+for agent_counter = 1:Agents.N
+    x = individual_coord{agent_counter}(1,Time.time_counter);
+    y = individual_coord{agent_counter}(2,Time.time_counter);
 
-    % Check if new position is within bounds of the plane
-    if x - area_radius < - plane_size
-        x = -plane_size + area_radius;
-    elseif x + area_radius > plane_size
-        x = plane_size - area_radius;
-    end
-    if y - area_radius < - plane_size
-        y = -plane_size + area_radius;
-    elseif y + area_radius > plane_size
-        y = plane_size - area_radius;
-    end
 
     % X and Y position in the grid
-    x_grid = round(x/plane_step) + map_steps/2 + 1;
-    y_grid = round(y/plane_step) + map_steps/2 + 1;
+    x_grid = round(x/Area.delta_x + Area.map_steps/2) + 1;
+    y_grid = round(y/Area.delta_x + Area.map_steps/2) + 1;
 
-    normal_area = def_normal_area(map_steps,[x_grid;y_grid],covariance);
+    normal_area = 1 - def_normal_area(Area.map_steps,[x_grid;y_grid],Area.covariance);
+    %normal_area = 1 - shift_normal_area(Area.std_area,x_grid,y_grid,Area.map_steps);
+
     %normal_area_shifted = circshift(normal_area,[x_grid y_grid]);
-    encompassed_area(normal_area > encompassed_area) = normal_area(normal_area > encompassed_area);
+    Area.encompassed_area(normal_area < Area.encompassed_area) = normal_area(normal_area < Area.encompassed_area);
 
-%     x_vector = (round((x-area_radius)/plane_step):round((x+area_radius)/plane_step)) + map_steps/2 + 1;
-%     y_vector = (round((y-area_radius)/plane_step):round((y+area_radius)/plane_step)) + map_steps/2 + 1;
-% 
-%     if sum(x_vector > map_steps) > 0 || sum(y_vector > map_steps) > 0
-%         encompassed_area(x_vector(1:end-1), y_vector(1:end-1)) = 1;
-%     else
-%         encompassed_area(x_vector, y_vector) = 1;
-%     end
-  
 end
 
-% Restrict to area of the hurricane
-encompassed_area = encompassed_area.*total_circle_area;
+% Relax to gaussian 4th power radius
+%Area.encompassed_area = 1 - relaxing_PDF(1-Area.encompassed_area,G);
+%Area.encompassed_area = relaxing_PDF(Area.encompassed_area,G);
+Area.encompassed_area = test_relaxing_PDF(Area.encompassed_area);
+Area.encompassed_area = Area.encompassed_area/max(max(Area.encompassed_area));
+
 % Compute percentage of area covered
-area_covered = sum(sum(encompassed_area))/sum(sum(total_circle_area)); %sum(sum(encompassed_area))*plane_step^2;
+%Area.area_covered = sum(sum(1 - Area.encompassed_area))/sum(sum(Area.total_circle_area)); %sum(sum(encompassed_area))*plane_step^2;
+Area.area_covered = 1 - sum(sum(Area.encompassed_area))/sum(sum(Area.initial_encompassed_area)); %sum(sum(encompassed_area))*plane_step^2;
+
 
 end
+
+
+
+
+
+
+
+
+
+%% Last working, uncomment to make it work
+% function [area_covered, encompassed_area] = area_coverage(G,individual_coord,max_radius,map_steps, encompassed_area, area_radius,time_counter,total_circle_area, alpha_time_constant, t, time_horizon,delta_t,area_covariance_matrix,max_area_pdf,std_area)
+% N = length(individual_coord);
+% %radial_step = 1e3;
+% %angular_step = 2*pi/100;
+% 
+% plane_size = max_radius;
+% plane_step = 2*plane_size/(map_steps-1);
+% covariance = round(area_covariance_matrix/plane_step^2);
+% %encompassed_area = zeros(map_steps, map_steps);
+% 
+% % Compute time energy increment
+% %energy_increment = time_energy_increment(0, alpha_time_constant, t, time_horizon,delta_t);
+% %energy_increment = alpha_time_constant*delta_t;
+% % Include time decrease (damping)
+% %encompassed_area = encompassed_area + energy_increment;
+% encompassed_area(encompassed_area>1) = 1;
+% encompassed_area(encompassed_area<0) = 0;
+% 
+% for agent_counter = 1:N
+%     x = individual_coord{agent_counter}(1,time_counter);
+%     y = individual_coord{agent_counter}(2,time_counter);
+% 
+%     % Check if new position is within bounds of the plane
+% %     if x - area_radius < - plane_size
+% %         x = -plane_size + area_radius;
+% %     elseif x + area_radius > plane_size
+% %         x = plane_size - area_radius;
+% %     end
+% %     if y - area_radius < - plane_size
+% %         y = -plane_size + area_radius;
+% %     elseif y + area_radius > plane_size
+% %         y = plane_size - area_radius;
+% %     end
+% 
+%     % X and Y position in the grid
+%     x_grid = round(x/plane_step + map_steps/2) + 1;
+%     y_grid = round(y/plane_step + map_steps/2) + 1;
+% 
+%     normal_area = 1 - def_normal_area(map_steps,[x_grid;y_grid],covariance);
+%     %normal_area = 1 - shift_normal_area(std_area,x_grid,y_grid,map_steps);
+% 
+%     %normal_area_shifted = circshift(normal_area,[x_grid y_grid]);
+%     encompassed_area(normal_area < encompassed_area) = normal_area(normal_area < encompassed_area);
+% 
+% %     x_vector = (round((x-area_radius)/plane_step):round((x+area_radius)/plane_step)) + map_steps/2 + 1;
+% %     y_vector = (round((y-area_radius)/plane_step):round((y+area_radius)/plane_step)) + map_steps/2 + 1;
+% % 
+% %     if sum(x_vector > map_steps) > 0 || sum(y_vector > map_steps) > 0
+% %         encompassed_area(x_vector(1:end-1), y_vector(1:end-1)) = 1;
+% %     else
+% %         encompassed_area(x_vector, y_vector) = 1;
+% %     end
+%   
+% end
+% 
+% % Restrict to area of the hurricane
+% %encompassed_area = encompassed_area.*total_circle_area;
+% % Relax to gaussian 4th power radius
+% encompassed_area = 1 - relaxing_PDF(1-encompassed_area,G);
+% 
+% % Compute percentage of area covered
+% area_covered = 1 - sum(sum(encompassed_area))/sum(sum(total_circle_area)); %sum(sum(encompassed_area))*plane_step^2;
+% 
+% end

@@ -2,9 +2,10 @@ function VideoName = plot_movie(savefolderlocal,VIDEO,GIF,t,individual_coord,Ggr
 
 if GRAPH_AREA == 1
     %video_file_name = '/HurricaneVideoArea2.avi';
-    video_file_name = '/HurricaneVideoArea.mp4';
+    video_file_name = '/HurricaneVideoArea1-2.mp4';
+    video_file_name2 = '/HurricaneVideoArea2-2.mp4';
 else
-    video_file_name = '/HurricaneVideoGraph.avi';
+    video_file_name = '/HurricaneVideoGraph2.avi';
 end
 
 %file_name = [save_mainname time_now]; %'dataBalloon 2022-12-13-11-50';
@@ -13,24 +14,28 @@ mkdir([savefolderlocal '/frames_graph']);
 if VIDEO == 1
     %VideoName = VideoWriter([savefolderlocal video_file_name],'Motion JPEG AVI');
     VideoName = VideoWriter([savefolderlocal video_file_name],'MPEG-4');
+    VideoName2 = VideoWriter([savefolderlocal video_file_name2],'MPEG-4');
     open(VideoName);
+    open(VideoName2);
 end
 % for agent_counter = 1:N
 %     plot_window{agent_counter} = plot(NaN,NaN);
 % end
-figure
+%figure
 %hold on
-grid
+%grid
 %axis(200e3*[-1 1 -1 1]);
 
 %list = 'rbkgbmyrb';
 
 n_steps = 1;%length(t)/1000;%200;
 counter = 0;
+f1 = figure;
 for time_counter = 1:n_steps:length(t)
     counter = counter + 1;
 
     if GRAPH_AREA == 1
+        %% Imagesc plot
 
         %mesh(encompassed_area_time{time_counter});
         %contour(encompassed_area_time{time_counter},Nr+1)
@@ -51,8 +56,16 @@ for time_counter = 1:n_steps:length(t)
         end
 
         plot(Ggraph{time_counter},XData=graph_position(1,:),YData=real(graph_position(2,:)))
-        axis(200e3*[-1 1 -1 1]);
+        %axis(200e3*[-1 1 -1 1]);
         hold off
+
+        title([ 't = ' num2str( t(time_counter) ) ' seconds'])
+        %print([savefolderlocal '/frames_graph/Frame ' num2str(counter)], '-dpng', '-r150');
+
+        if VIDEO == 1
+            VideoFrame = getframe(f1);
+            writeVideo(VideoName,VideoFrame);
+        end
 
     else
         %pause(0.01)
@@ -68,14 +81,40 @@ for time_counter = 1:n_steps:length(t)
 
         plot(Ggraph{time_counter},XData=graph_position(1,:),YData=real(graph_position(2,:)))
         axis(200e3*[-1 1 -1 1]);
-    end
-    title([ 't = ' num2str( t(time_counter) ) ' seconds'])
-    print([savefolderlocal '/frames_graph/Frame ' num2str(counter)], '-dpng', '-r150');
 
-    if VIDEO == 1
-        VideoFrame = getframe(gcf);
-        writeVideo(VideoName,VideoFrame);
+        title([ 't = ' num2str( t(time_counter) ) ' seconds'])
+        %print([savefolderlocal '/frames_graph/Frame ' num2str(counter)], '-dpng', '-r150');
+
+        if VIDEO == 1
+            VideoFrame = getframe(gcf);
+            writeVideo(VideoName,VideoFrame);
+        end
     end
+
+    disp(['Graph plotting progress: ' num2str(time_counter*100/length(t)) ' %' newline])
+
+end
+
+n_steps = 1;%length(t)/1000;%200;
+counter = 0;
+f2 = figure;
+for time_counter = 1:n_steps:length(t)
+    counter = counter + 1;
+
+    if GRAPH_AREA == 1
+        %% Mesh plot
+
+        mesh(encompassed_area_time{time_counter});
+
+        title([ 't = ' num2str( t(time_counter) ) ' seconds'])
+        %print([savefolderlocal '/frames_graph/Frame ' num2str(counter)], '-dpng', '-r150');
+
+        if VIDEO == 1
+            VideoFrame = getframe(f2);
+            writeVideo(VideoName2,VideoFrame);
+        end
+    end
+
     disp(['Graph plotting progress: ' num2str(time_counter*100/length(t)) ' %' newline])
 
 end
@@ -97,4 +136,7 @@ if GIF == 1
 end
 if VIDEO == 1
     close(VideoName);
+    if GRAPH_AREA == 1
+        close(VideoName2);
+    end
 end
