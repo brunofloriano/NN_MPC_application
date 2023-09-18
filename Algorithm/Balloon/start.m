@@ -3,6 +3,7 @@
 % Choose simulation parameters
 tangential_velocity = 60; % in m/s
 Nr = 8; % excluding the root (mothership)
+%Nr = 3; % excluding the root (mothership)
 N = Nr+1; % including mothership
 height = 0;
 level_height = 558.3;
@@ -11,9 +12,9 @@ Agents.N = N;
 Agents.Nr = Nr;
 
 %% Time parameters
-tmax = 24*3600/1; % in seconds
+tmax = 2*24*3600/1; % in seconds
 %t_change = tmax/2;
-t_steps = 501;%1000;
+t_steps = 500 + 1;%1000;
 delta_t = tmax/(t_steps-1); %1; % in seconds
 t73 = tmax; % time to have a 73% decrease on certainty
 alpha_time_constant = 1/t73;

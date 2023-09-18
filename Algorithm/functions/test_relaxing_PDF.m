@@ -1,7 +1,7 @@
 function p = test_relaxing_PDF(p_initial)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% begin user input %%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-G.dx=0.1; G.dt=.001; G.xh=G.dx/2; G.d=2; G.dif = 1; 
+G.dx=0.1; G.dt=.001; G.xh=G.dx/2; G.d=2; G.dif = 1*1; 
 dist1.mean = [0;0]; dist1.std = [1;1]; dist1.P = [dist1.std(1,1)^2 0; 0 dist1.std(2,1)^2]; dist1.n = round(((6*dist1.std(1,1)/G.dx)+1)*((6*dist1.std(2,1)/G.dx)+1)); 
 dist1.Pinv = inv(dist1.P); dist1.Pdet = det(dist1.P); 
 dist2.mean = [-3;-3]; dist2.std = [0.2;0.2]; dist2.P = [dist2.std(1,1)^2 0; 0 dist2.std(2,1)^2]; dist2.n = round(((6*dist2.std(1,1)/G.dx)+1)*((6*dist2.std(2,1)/G.dx)+1));

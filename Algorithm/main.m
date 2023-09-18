@@ -121,6 +121,8 @@ for simulation_counter = 1:sim_step:max_sim
     delay = mu/2*randn(length(t),1) + (tau + mu/2);
     theta = mode(round(1*delta_t/Delta));
     Laplacian = L{theta};
+    Laplacian_time{1} = Laplacian;
+    L_cumulative_time{1} = Laplacian;
     Adjacency = Laplacian2adj(Laplacian);
     J(1) = 0.5*state(:,1)'*kron(Laplacian+Laplacian',eye(n))*state(:,1);
     Jdata = J(1);
@@ -184,7 +186,9 @@ for simulation_counter = 1:sim_step:max_sim
        
         if strcmp(save_mainname,'dataBalloon ')
             Laplacian = laplacian(Ggraph{time_counter-1});
-            L_cumulative = accumulate_laplacian(Laplacian,L_cumulative);
+            Laplacian_time{time_counter} = Laplacian;
+            L_cumulative = accumulate_laplacian(Laplacian,L_cumulative,Time);
+            L_cumulative_time{time_counter} = L_cumulative;
             K(1) = 0;
             %K = K*0;
             if t(time_counter) > t_change
@@ -205,6 +209,12 @@ for simulation_counter = 1:sim_step:max_sim
         individual_state = group_dynamics(individual_state,K,Adjacency,delta_t);
         %balloon_kinematics
         [individual_coord, individual_angular_position, individual_state, Ggraph] = group_kinematics(individual_angular_position, individual_state, individual_coord, time_counter, delta_t, comm_range, max_root_connections,Ggraph);
+
+
+%         if time_counter == round(length(t)/2) % == 502
+%             GgSiraph{time_counter} = routing_protocol(position,0,max_root_connections);
+%             L_cumulative = L_cumulative*0;
+%         end
 
         state(:,time_counter) = stack_states(individual_state);
         state_error(:,time_counter) = state(:,time_counter) - (kron(ones(N,1),individual_state{1}) + desired_state);

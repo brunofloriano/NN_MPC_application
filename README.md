@@ -1,30 +1,41 @@
 # NN_MPC
-Neural network-based (NN) Model Predictive Control (MPC) algorithm to control a multi-agent system (MAS) with stochastic communication topology.
+Coordinating a Hurricane Monitoring System Using a Swarm of Buoyancy-Controlled Balloons Trading Off Communication and Coverage by using Neural network-based Model Predictive Control (NNMPC).
 
-## Algorithm folder
-Folder includes the NN-based MPC algorithm to achieve consensus in MAS for quadrotor fleet system, system with disturbances and nonlinear robot-car system.
+By Bruno Floriano, Benjamin Hanson, Thomas Bewley, Joao Ishihara and Henrique Ferreira (2023).
 
-### How to run algorithm
-The main file is "main.m". In order to run it, uncomment line:
+A link to the paper will be added here when published.
 
-* Line 17 - "start_WW20_Fig1" to run linear system (based on Wang et al. (2018));
-* Line 18 - "start_GL20_Fig3" to run system with disturbances (based on Gao et al. (2020));
-* Line 21 - "start_Car" to run nonlinear robot-car system.
+## How to run algorithm
+The main file is "main.m". There are 3 scenarios that were simulated in the paper:
 
-The output is the evolution of the system's states over time.
+* Simulation 1 with T=6h, N=9 (default)
+* Simulation 2 with T=12h, N=9
+* Simulation 3 with T=6h, N=4
 
-## Results folder
-Includes the data (.mat) and the code to generate the graphs and tables.
+The default simulation is Simulation 1. To run Simuation 2, uncomment line 8 of the file 'functions/accumulate_laplacian.m'. To run Simulation 3, uncomment line 6 of the file 'Balloon/start.m'.
 
-### How to verify the results
-The subfolder "results" contain all the data (.mat) shown in the Results section. It is organized according to the folder's names as follows:
+The output results in 2 videos of the system's evolution over time:
 
-* WW20: refers to the results of the linear system
-* GL20: refers to the results of the system with disturbances
-* Car: refers to the results of the nonlinear robot-car system
+* Video 1: Top view of the balloons in a colormap of the interest function;
+* Video 2: 3D plot of the interest function.
 
-* Crossval: refers to the cross-validation results
-* Horizon: refers to the results for different horizons
-* Pi_x: refers to the results with the transition matrix \Pi = \Pi_x
+## Results
 
-To generate the graphics of state's progression over time, run "analysis.m". To generate the cross-validation and horizon graphics, run "analysis_crossval.m".
+The folder "results" contain all the data (.mat) shown in the Results section. It is organized according to the folder's names as follows:
+
+* Simulation 1: dataBalloon 2023-5-12-18-51;
+* Simulation 2: dataBalloon 2023-5-13-6-17;
+* Simulation 3: dataBalloon 2023-5-30-23-16.
+
+### Videos
+
+To generate the frames and videos of each simulation, run "make_movie.m". Uncomment the following lines for each simulation:
+
+* Line 3 to obtain the videos of the Simulation 1;
+* Line 4 to obtain the videos of the Simulation 2;
+* Line 5 to obtain the videos of the Simulation 3.
+
+### Graphs
+
+To generate the area coverage/communication energy graph, run "analysis_balloons.m" (default is Simulation 1). For Simulation 2, uncomment line 16.
+To make Simulation 3, and see the laplacian entries over time, uncomment line 17.

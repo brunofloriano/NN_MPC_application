@@ -1,5 +1,5 @@
 function next_state = dynamics(previous_state,control_input,delta_t)
-level_height = 558.3;
+level_height = 5558.3;
 
     horizontal_position_x = previous_state(1);
     vertical_position_z = previous_state(2);
@@ -10,8 +10,14 @@ level_height = 558.3;
 
     if horizontal_position_x < 5e3
         u = level_height;
-    elseif horizontal_position_x > 175e3
+    elseif horizontal_position_x > 100e3
         u = -level_height;
+    end
+
+    if u < -level_height
+        u = -level_height;
+    elseif u > level_height
+        u = level_height;
     end
 
     noise_xi = noise_std_deviation*randn(1);

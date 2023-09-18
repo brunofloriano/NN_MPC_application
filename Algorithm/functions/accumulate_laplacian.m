@@ -2,24 +2,37 @@
 % This function takes a Laplacian matrix L (current communication graph) and adds 
 % it to the cumulative matrix Lc (cumulative graph)
 
-function [Lc] = accumulate_laplacian(L,Lc)
+function [Lc] = accumulate_laplacian(L,Lc,Time)
 N = length(L);
+tf = 6*3600;
+%tf = 12*3600;
+epsilon = Time.delta_t/tf;
+
+% Decay
+Lc = Lc + epsilon;
 
 % Add matrices
-Lc = Lc + L;
+%Lc = Lc + L;
 
 for i = 1:N
     for j = 1:N
         % Normalize (make non-diagonal = -1)
-        if Lc(i,j) < 0
-            Lc(i,j) = -1;
+%         if Lc(i,j) < 0
+%             %Lc(i,j) = -1;
+%         else
+%             Lc(i,j) = 0;
+%         end
+
+        if Lc(i,j) >= 0
+            Lc(i,j) = 0;
         end
 
         % Routing
         if L(i,j) < 0
+            Lc(i,j) = -1;
             for k = 1:N
                 if Lc(j,k) < 0
-                    Lc(i,k) = -1;
+                    Lc(i,k) = Lc(j,k); %-1;
                 end
             end
         end

@@ -1,0 +1,11 @@
+clear all; close all; clc;
+
+%file_name = 'dataBalloon 2023-5-12-18-51'; cycles = 48/6; interval = 75; ROUTING = 0; CUMMULATIVE = 1; % 48h, 500 steps, D=1, communication decay corrected, tf=6h
+%file_name = 'dataBalloon 2023-5-13-6-17'; cycles = 48/12; interval = 125; ROUTING = 0; CUMMULATIVE = 1; % 48h, 500 steps, D=1, communication decay corrected, tf=12h
+%file_name = 'dataBalloon 2023-5-30-23-16'; cycles = 48/6; interval = 75; ROUTING = 1; CUMMULATIVE = 0; % N=3+1, 48h, 500 steps, D=1, communication decay corrected, tf=6h
+
+load('results/dataBalloon 2023-5-12-18-51/dataBalloon 2023-5-12-18-51.mat')
+load('results/dataBalloon 2023-5-13-6-17/dataBalloon 2023-5-13-6-17.mat')
+load('results/dataBalloon 2023-5-30-23-16/dataBalloon 2023-5-30-23-16.mat')
+
+VideoName = plot_movie(savefolderlocal,VIDEO,GIF,t,individual_coord,Ggraph,GRAPH_AREA,Nr,encompassed_area_time);
