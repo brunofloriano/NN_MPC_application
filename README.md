@@ -1,4 +1,4 @@
-# NN_MPC
+# Hurricane Monitoring System Using NNMPC
 Coordinating a Hurricane Monitoring System Using a Swarm of Buoyancy-Controlled Balloons Trading Off Communication and Coverage by using Neural network-based Model Predictive Control (NNMPC).
 
 By Bruno Floriano, Benjamin Hanson, Thomas Bewley, Joao Ishihara and Henrique Ferreira (2023).
